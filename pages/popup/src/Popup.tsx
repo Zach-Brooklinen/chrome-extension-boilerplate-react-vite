@@ -6,57 +6,49 @@ import { ToggleButton } from '@extension/ui';
 
 const notificationOptions = {
   type: 'basic',
-  iconUrl: chrome.runtime.getURL('icon-34.png'),
   title: 'Injecting content script error',
   message: 'You cannot inject script here!',
 } as const;
 
 const Popup = () => {
-  const theme = useStorage(exampleThemeStorage);
-  const isLight = theme === 'light';
-  const logo = isLight ? 'popup/logo_vertical.svg' : 'popup/logo_vertical_dark.svg';
-  const goGithubSite = () =>
-    chrome.tabs.create({ url: 'https://github.com/Jonghakseo/chrome-extension-boilerplate-react-vite' });
+  const openConfluencePage = () =>
+    chrome.tabs.create({
+      url: 'https://brooklinen.atlassian.net/wiki/spaces/BO2/pages/2163802114/Brooklinen+Developer+Chrome+Extension',
+    });
 
-  const injectContentScript = async () => {
+  const toggleValue = async e => {
+    e.preventDefault();
+    console.log(e.target.checked, e.target.name, 'target');
     const [tab] = await chrome.tabs.query({ currentWindow: true, active: true });
 
-    if (tab.url!.startsWith('about:') || tab.url!.startsWith('chrome:')) {
-      chrome.notifications.create('inject-error', notificationOptions);
-    }
-
-    await chrome.scripting
-      .executeScript({
-        target: { tabId: tab.id! },
-        files: ['/content-runtime/index.iife.js'],
-      })
-      .catch(err => {
-        // Handling errors related to other paths
-        if (err.message.includes('Cannot access a chrome:// URL')) {
-          chrome.notifications.create('inject-error', notificationOptions);
-        }
-      });
+    console.log(tab);
+    sessionStorage.setItem(e.target.name, e.target.checked);
+    console.log(sessionStorage, 'sessionStorage');
+    if (e.target.checked) e.target.checked = false;
+    else e.target.checked = true;
+    await chrome.tabs.sendMessage(tab.id, {
+      context: e.target.name,
+      checked: e.target.checked,
+    });
   };
 
   return (
-    <div className={`App ${isLight ? 'bg-slate-50' : 'bg-gray-800'}`}>
-      <header className={`App-header ${isLight ? 'text-gray-900' : 'text-gray-100'}`}>
-        <button onClick={goGithubSite}>
-          <img src={chrome.runtime.getURL(logo)} className="App-logo" alt="logo" />
-        </button>
-        <p>
-          Edit <code>pages/popup/src/Popup.tsx</code>
-        </p>
-        <button
-          className={
-            'font-bold mt-4 py-1 px-4 rounded shadow hover:scale-105 ' +
-            (isLight ? 'bg-blue-200 text-black' : 'bg-gray-700 text-white')
-          }
-          onClick={injectContentScript}>
-          Click to inject Content Script
-        </button>
-        <ToggleButton>{t('toggleTheme')}</ToggleButton>
-      </header>
+    <div id="brooklinenPopup" className="bg-[#fdfaf8] text-[#283455] px-5">
+      <button onClick={openConfluencePage}>Open Confluence Page!</button>
+      <label className="inline-flex items-center cursor-pointer">
+        <input type="checkbox" name="overlayGrid" onClick={e => toggleValue(e)} className="sr-only peer" />
+        <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#283455] dark:peer-checked:bg-blue-600"></div>
+        <span className="ms-3 text-sm font-medium text-[#283455]">Show Overlay Grid</span>
+      </label>
+      <br />
+
+      <label className="inline-flex items-center cursor-pointer">
+        <input type="checkbox" name="previewBar" onClick={e => toggleValue(e)} className="sr-only peer" checked />
+        <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#283455] dark:peer-checked:bg-blue-600"></div>
+        <span className="ms-3 text-sm font-medium text-[#283455] dark:text-gray-300">
+          Show Preview Bar {sessionStorage.getItem('previewBar')}{' '}
+        </span>
+      </label>
     </div>
   );
 };
