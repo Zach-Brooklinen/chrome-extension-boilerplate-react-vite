@@ -10,7 +10,6 @@ const Popup = () => {
   //toggle value
   const toggleValue = async e => {
     e.preventDefault();
-    console.log(e.target.checked, e.target.name, 'target');
     const [tab] = await chrome.tabs.query({ currentWindow: true, active: true });
     if (e.target.checked) e.target.checked = false;
     else e.target.checked = true;
@@ -35,7 +34,6 @@ const Popup = () => {
   //use document cookies on the current tab to determine if toggles should be pre-checked
   const checkCookies = async () => {
     const [tab] = await chrome.tabs.query({ currentWindow: true, active: true });
-    console.log(tab);
 
     chrome.windows.get(tab.windowId, function (win) {
       console.log('window', win); // THIS IS THE WINDOW OBJECT

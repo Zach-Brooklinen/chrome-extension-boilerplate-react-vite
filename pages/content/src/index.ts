@@ -47,6 +47,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     //refresh page after cookie is set
     location.reload();
   } else if (request.loading) {
+    const previewJSON = JSON.parse(document.querySelector('#OnlineStorePreviewBarNextData').textContent);
     const promoJSON = JSON.parse(
       `{${getStringBetween(document.querySelector('#defaultData').textContent, 'window.Brooklinen.promo = {', '};')}}`,
     );

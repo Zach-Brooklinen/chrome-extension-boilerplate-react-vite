@@ -31,7 +31,14 @@ export default function App() {
     document.body.prepend(overlayGridContainer);
   }, []);
 
-  const themeJSON = JSON.parse(document.querySelector('#OnlineStorePreviewBarNextData')?.textContent);
+  const defaultObj = {
+    theme: {
+      isDraft: false,
+    },
+  };
+  const themeJSON = document.querySelector('#OnlineStorePreviewBarNextData')?.textContent
+    ? JSON.parse(document.querySelector('#OnlineStorePreviewBarNextData')?.textContent)
+    : defaultObj;
   let adminURL, adminID, adminScope;
   if (themeJSON?.pageSpecificData?.resource) {
     adminURL = themeJSON.pageSpecificData.resource.url;
@@ -42,7 +49,7 @@ export default function App() {
   let url = new URL(window.location.href);
   url.searchParams.delete('preview_theme_id');
   url.searchParams.delete('blCookieSet');
-  url.searchParams.append('preview_theme_id', themeJSON.theme.id);
+  if (themeJSON?.theme.id) url.searchParams.append('preview_theme_id', themeJSON.theme.id);
   getCookies('_bl_dev__').forEach(cookie => {
     url.searchParams.append('blCookieSet', cookie);
   });
@@ -103,14 +110,24 @@ export default function App() {
       .querySelector('#chrome-extension-boilerplate-react-vite-content-view-root')
       .shadowRoot.querySelector('#themePreviewBar').style.display = 'none';
   }
+
+  function exitPreview() {
+    if (themeJSON?.theme?.name) {
+      const e = new URL(window.location.href);
+      e.searchParams.set('exitPreview', '1');
+      window.location.assign(e.href);
+    } else {
+      openTab('https://admin.shopify.com/store/brooklinen2/themes');
+    }
+  }
   return (
     <div
       id="themePreviewBar"
       className="fixed bottom-0 px-10 py-2 transition-colors bg-[#283455c5] hover:bg-[#283455] rounded-r-[20px] animate-fade"
       style={{ zIndex: 2147483648, display: checkCookie('_bl_chrome-extension_preview-bar') ? '' : 'none' }}>
       <div className="text-[12px] text-white relative">
-        Viewing {!themeJSON.theme.isDraft ? 'live' : ''} theme:{' '}
-        <span className="font-bold">{themeJSON.theme.name}</span>
+        Viewing {!themeJSON.theme.isDraft ? 'live' : ''} theme
+        <span className="font-bold">{themeJSON?.theme?.name ? ':' + themeJSON?.theme.name : ''}</span>
         <svg
           className="absolute cursor-pointer"
           onClick={() => hidePreviewBar()}
@@ -145,6 +162,12 @@ export default function App() {
               ? `https://admin.shopify.com/store/brooklinen2/apps/accentuate/app/edit?scope=${adminScope}&id=${adminID}`
               : ''
           }
+        />
+        <Button
+          text={themeJSON?.theme?.name ? 'Exit Preview' : 'View Dev Themes'}
+          callback={() => {
+            exitPreview();
+          }}
         />
       </div>
     </div>
