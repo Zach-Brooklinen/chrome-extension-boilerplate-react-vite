@@ -189,12 +189,7 @@ const Popup = () => {
                   Tier {i + 1}: {tier.title}
                 </li>
                 <li className="ml-[12px]">Threshold: ${tier.thresh / 100}</li>
-                <li className="ml-[12px]">
-                  Type: {tier.type}{' '}
-                  {tier.type === 'gwp' && (
-                    <span>(currently {dyData?.payload?.gwp?.enabled ? 'active' : 'inactive'})</span>
-                  )}
-                </li>
+                <li className="ml-[12px]">Type: {tier.type}</li>
               </ul>
             ))}
           </div>
