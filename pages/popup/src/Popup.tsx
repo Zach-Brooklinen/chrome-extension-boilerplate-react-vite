@@ -156,7 +156,7 @@ const Popup = () => {
         <h2
           className="text-[12px] font-bold mb-[5px] relative cursor-pointer"
           onClick={() => toggleActiveClass('.promo-object')}>
-          {dyData?.payload?.version}{' '}
+          {dyData?.payload?.version}
           <svg
             className="absolute right-0 top-[5px] w-[5px] rotate-90"
             version="1.1"
@@ -177,7 +177,9 @@ const Popup = () => {
           <p>SWD Code: {dyData?.payload?.discounts?.swd?.code}</p>
           <hr className="mt-[10px] mb-[10px]" />
           <p>Category Enabled: {dyData?.payload?.discounts?.category?.enabled ? 'true' : 'false'}</p>
-          <p>Category Promo Name: {dyData?.payload?.discounts?.category?.promoName ? 'true' : 'false'}</p>
+          {dyData?.payload?.discounts?.category?.enabled && (
+            <p>Category Promo Name: {dyData?.payload?.discounts?.category?.promoName}</p>
+          )}
           <hr className="mt-[10px] mb-[10px]" />
           <p>Progress Bar Thresholds</p>
           <div className="ml-[12px]">
