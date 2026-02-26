@@ -58,6 +58,9 @@ const manifest = {
       css: ['content.css'],
     },
   ],
+  externally_connectable: {
+    matches: ['<all_urls>'],
+  },
   devtools_page: 'devtools/index.html',
   web_accessible_resources: [
     {

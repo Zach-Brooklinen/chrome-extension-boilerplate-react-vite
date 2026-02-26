@@ -1,12 +1,31 @@
 import '@src/Popup.css';
+import { useState, useEffect } from 'react';
 import { withErrorBoundary, withSuspense } from '@extension/shared';
 
 const Popup = () => {
+  const [dyData, setDyData] = useState(null);
+
+  useEffect(() => {
+    // Read whatever was stored before the popup opened
+    chrome.storage.local.get('dyData', result => {
+      if (result.dyData) setDyData(result.dyData);
+    });
+
+    // Also catch real-time updates if the popup is already open
+    const handleMessage = (message: { type: string; payload?: unknown }) => {
+      if (message.type === 'BROOKLINEN_DY') {
+        setDyData(message);
+      }
+    };
+    chrome.runtime.onMessage.addListener(handleMessage);
+    return () => chrome.runtime.onMessage.removeListener(handleMessage);
+  }, []);
   const openPage = page =>
     chrome.tabs.create({
       url: page,
     });
 
+  console.log(dyData, 'dy data');
   //toggle value
   const toggleValue = async e => {
     e.preventDefault();
@@ -35,9 +54,6 @@ const Popup = () => {
   const checkCookies = async () => {
     const [tab] = await chrome.tabs.query({ currentWindow: true, active: true });
 
-    chrome.windows.get(tab.windowId, function (win) {
-      console.log('window', win); // THIS IS THE WINDOW OBJECT
-    });
     await chrome.tabs
       .sendMessage(tab.id, {
         loading: true,
@@ -58,6 +74,12 @@ const Popup = () => {
       clearCookies: true,
     });
   };
+
+  const toggleActiveClass = selector => {
+    document.querySelector(selector).classList.toggle('active');
+    document.querySelector(`${selector}-container svg`)?.classList.toggle('active');
+  };
+
   return (
     <div id="brooklinenPopup" className="bg-[#fdfaf8] text-[#283455] px-5 animate-fade relative">
       <h2 className="text-[12px] font-bold mb-[5px]">On-Page Toggles</h2>
@@ -120,7 +142,6 @@ const Popup = () => {
           </button>
         </div>
       </form>
-
       <div className="mt-[10px] mb-[10px]">
         <button
           onClick={() => {
@@ -129,6 +150,77 @@ const Popup = () => {
           className="w-full text-white end-2.5 bottom-2.5 bg-[#283455] hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-[12px] px-4 py-2 dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800">
           Clear All Dev Cookies
         </button>
+      </div>
+
+      <div className="promo-object-container">
+        <h2
+          className="text-[12px] font-bold mb-[5px] relative cursor-pointer"
+          onClick={() => toggleActiveClass('.promo-object')}>
+          {dyData?.payload?.version}{' '}
+          <svg
+            className="absolute right-0 top-[5px] w-[5px] rotate-90"
+            version="1.1"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            x="0px"
+            y="0px"
+            viewBox="0 0 12.8 22.7">
+            <path
+              class="st0"
+              d="M2.7,22.2c-0.6,0.6-1.6,0.6-2.2,0c-0.6-0.6-0.6-1.6,0-2.2l7.7-8c0.4-0.4,0.4-1,0-1.4l-7.7-8
+      c-0.6-0.6-0.6-1.6,0-2.2c0.6-0.6,1.6-0.6,2.3,0L12,10c0.8,0.8,0.8,2,0,2.8C12,12.8,2.7,22.2,2.7,22.2z"></path>
+          </svg>
+        </h2>
+        <div className="promo-object mb-[5px]">
+          <p>SWD Enabled: {dyData?.payload?.discounts?.swd?.enabled ? 'true' : 'false'}</p>
+          <p>SWD Amount: {dyData?.payload?.discounts?.swd?.amount}</p>
+          <p>SWD Code: {dyData?.payload?.discounts?.swd?.code}</p>
+          <hr className="mt-[10px] mb-[10px]" />
+          <p>Category Enabled: {dyData?.payload?.discounts?.category?.enabled ? 'true' : 'false'}</p>
+          <p>Category Promo Name: {dyData?.payload?.discounts?.category?.promoName ? 'true' : 'false'}</p>
+          <hr className="mt-[10px] mb-[10px]" />
+          <p>Progress Bar Thresholds</p>
+          <div className="ml-[12px]">
+            {dyData?.payload?.progressBar?.map((tier, i) => (
+              <ul key={i}>
+                <li>
+                  Tier {i + 1}: {tier.title}
+                </li>
+                <li className="ml-[12px]">Threshold: ${tier.thresh / 100}</li>
+                <li className="ml-[12px]">
+                  Type: {tier.type}{' '}
+                  {tier.type === 'gwp' && (
+                    <span>(currently {dyData?.payload?.gwp?.enabled ? 'active' : 'inactive'})</span>
+                  )}
+                </li>
+              </ul>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <hr className="mt-[10px] mb-[10px]" />
+      <div className="audiences-container">
+        <h2
+          className="text-[12px] font-bold mb-[5px] relative cursor-pointer"
+          onClick={() => toggleActiveClass('.audiences')}>
+          Audiences{' '}
+          <svg
+            className="absolute right-0 top-[5px] w-[5px] rotate-90"
+            version="1.1"
+            xmlns="http://www.w3.org/2000/svg"
+            xmlns:xlink="http://www.w3.org/1999/xlink"
+            x="0px"
+            y="0px"
+            viewBox="0 0 12.8 22.7">
+            <path
+              class="st0"
+              d="M2.7,22.2c-0.6,0.6-1.6,0.6-2.2,0c-0.6-0.6-0.6-1.6,0-2.2l7.7-8c0.4-0.4,0.4-1,0-1.4l-7.7-8
+      c-0.6-0.6-0.6-1.6,0-2.2c0.6-0.6,1.6-0.6,2.3,0L12,10c0.8,0.8,0.8,2,0,2.8C12,12.8,2.7,22.2,2.7,22.2z"></path>
+          </svg>
+        </h2>
+
+        <ul className="audiences mb-[5px]">{dyData?.audiences?.map((audience, i) => <li key={i}>{audience}</li>)}</ul>
       </div>
       <div className="text-[10px] absolute bottom-[-20px] flex">
         <button

@@ -28,3 +28,19 @@ code {
   border-radius: 0.25rem;
   padding: 0.2rem 0.5rem;
 }
+
+.audiences, .promo-object{
+  display:none;
+}
+.audiences.active,
+.promo-object.active, 
+[class$="-container"].active {
+  display:block;
+}
+
+[class$="-container"] svg.active {
+  transform: rotate(270deg);
+}
+[class$="-container"] svg {
+  transform: rotate(90deg);
+}

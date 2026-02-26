@@ -12,6 +12,10 @@ function checkCookie(cookieName) {
 
 export default function App() {
   useEffect(() => {
+    //hide shopify's ootb preview bar
+    let style = document.createElement('style');
+    document.head.appendChild(style);
+    style.textContent = '#PBarNextFrameWrapper { display:none; }';
     const overlayGridContainer = document.createElement('div');
     overlayGridContainer.innerHTML = `<div class='overlay-grid' ${checkCookie('_bl_chrome-extension_grid') ? '' : "style='display:none'"} >
           <div class='overlay-grid__item'></div>
@@ -39,6 +43,7 @@ export default function App() {
   const themeJSON = document.querySelector('#OnlineStorePreviewBarNextData')?.textContent
     ? JSON.parse(document.querySelector('#OnlineStorePreviewBarNextData')?.textContent)
     : defaultObj;
+
   let adminURL, adminID, adminScope;
   if (themeJSON?.pageSpecificData?.resource) {
     adminURL = themeJSON.pageSpecificData.resource.url;
