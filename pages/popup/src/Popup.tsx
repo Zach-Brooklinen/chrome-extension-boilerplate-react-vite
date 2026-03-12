@@ -1,31 +1,15 @@
 import '@src/Popup.css';
-import { useState, useEffect } from 'react';
-import { withErrorBoundary, withSuspense } from '@extension/shared';
+import { useEffect } from 'react';
+import { withErrorBoundary, withSuspense, useDyData } from '@extension/shared';
 
 const Popup = () => {
-  const [dyData, setDyData] = useState(null);
+  const dyData = useDyData();
 
-  useEffect(() => {
-    // Read whatever was stored before the popup opened
-    chrome.storage.local.get('dyData', result => {
-      if (result.dyData) setDyData(result.dyData);
-    });
-
-    // Also catch real-time updates if the popup is already open
-    const handleMessage = (message: { type: string; payload?: unknown }) => {
-      if (message.type === 'BROOKLINEN_DY') {
-        setDyData(message);
-      }
-    };
-    chrome.runtime.onMessage.addListener(handleMessage);
-    return () => chrome.runtime.onMessage.removeListener(handleMessage);
-  }, []);
   const openPage = page =>
     chrome.tabs.create({
       url: page,
     });
 
-  console.log(dyData, 'dy data');
   //toggle value
   const toggleValue = async e => {
     e.preventDefault();
@@ -61,11 +45,12 @@ const Popup = () => {
       .then(res => {
         document.querySelector('[name="overlayGrid"]').checked = res.overlayGrid;
         document.querySelector('[name="previewBar"]').checked = res.previewBar;
-        //document.querySelector('#promoVersion').innerHTML = res.promoObject.version;
       });
   };
 
-  checkCookies();
+  useEffect(() => {
+    checkCookies();
+  }, []);
 
   const clearDevCookies = async () => {
     const [tab] = await chrome.tabs.query({ currentWindow: true, active: true });

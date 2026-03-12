@@ -83,15 +83,8 @@ window.postMessage(
 window.addEventListener('message', event => {
   if (event.source !== window || !event.data.type) return;
   if (event.data.type === 'BROOKLINEN_DY') {
-    const currentAudiences = [];
-
     const audienceJSON = JSON.parse(document?.querySelector('#dy-audiences')?.textContent);
-    if (audienceJSON) {
-      for (let i = 0; i < audienceJSON.audiences.length; i++) {
-        currentAudiences.push(audienceLibrary[audienceJSON.audiences[i]]);
-      }
-    }
-    event.data.audiences = currentAudiences;
+    event.data.audiences = audienceJSON?.audiences?.map(id => audienceLibrary[id]) ?? [];
     chrome.storage.local.set({ dyData: event.data });
     chrome.runtime.sendMessage(event.data);
   }
@@ -99,14 +92,13 @@ window.addEventListener('message', event => {
 
 chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   //let all cookies set in this function expire after 30 days
-  let expires = '';
   const date = new Date();
   date.setTime(date.getTime() + 30 * 24 * 60 * 60 * 1000);
-  expires = '; expires=' + date.toUTCString();
+  const expires = '; expires=' + date.toUTCString();
   document.cookie = `_bl_chrome_extension_id=${sender.id}; expires=${expires}; path=/;`;
   if (request.context) {
-    switch (true) {
-      case request.context == 'overlayGrid':
+    switch (request.context) {
+      case 'overlayGrid':
         const overlayGrid = document.querySelector('.overlay-grid');
         if (request.checked) {
           document.cookie = `_bl_chrome-extension_grid=true; expires=${expires}; path=/;`;
@@ -117,7 +109,7 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         }
 
         break;
-      case request.context == 'previewBar':
+      case 'previewBar':
         const previewBar = document
           .querySelector('#chrome-extension-boilerplate-react-vite-content-view-root')
           .shadowRoot.querySelector('#themePreviewBar');

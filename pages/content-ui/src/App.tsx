@@ -1,14 +1,11 @@
 import { useEffect, useState } from 'react';
+import { checkCookie, useDyData } from '@extension/shared';
 /*
-to do: 
+to do:
 - grid toggle
 - clear cookie button
 
 */
-
-function checkCookie(cookieName) {
-  return document.cookie.indexOf(cookieName + '=') > -1;
-}
 
 export default function App() {
   useEffect(() => {
@@ -40,9 +37,8 @@ export default function App() {
       isDraft: false,
     },
   };
-  const themeJSON = document.querySelector('#OnlineStorePreviewBarNextData')?.textContent
-    ? JSON.parse(document.querySelector('#OnlineStorePreviewBarNextData')?.textContent)
-    : defaultObj;
+  const previewBarEl = document.querySelector('#OnlineStorePreviewBarNextData');
+  const themeJSON = previewBarEl?.textContent ? JSON.parse(previewBarEl.textContent) : defaultObj;
 
   let adminURL, adminID, adminScope;
   if (themeJSON?.pageSpecificData?.resource) {
@@ -73,21 +69,7 @@ export default function App() {
     return Object.keys(cookies).filter(val => val.includes(match));
   }
 
-  const [dyData, setDyData] = useState<Record<string, unknown> | null>(null);
-
-  useEffect(() => {
-    chrome.storage.local.get('dyData', result => {
-      if (result.dyData) setDyData(result.dyData);
-    });
-
-    const handleMessage = (message: { type: string }) => {
-      if (message.type === 'BROOKLINEN_DY') {
-        setDyData(message);
-      }
-    };
-    chrome.runtime.onMessage.addListener(handleMessage);
-    return () => chrome.runtime.onMessage.removeListener(handleMessage);
-  }, []);
+  const dyData = useDyData();
 
   const [buttonText, setButtonText] = useState('Copy Preview Theme URL');
 
@@ -104,7 +86,7 @@ export default function App() {
   }
 
   function Button({ text, callback, url, style }) {
-    const styling = style == 'bold' ? 'font-bold' : 'text-[10px] text-white underline underline-offset-4 mr-4';
+    const styling = style === 'bold' ? 'font-bold' : 'text-[10px] text-white underline underline-offset-4 mr-4';
     if (!url && !callback) {
       return null;
     } else if (!url && callback) {
