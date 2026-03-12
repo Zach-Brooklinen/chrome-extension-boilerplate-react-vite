@@ -73,6 +73,22 @@ export default function App() {
     return Object.keys(cookies).filter(val => val.includes(match));
   }
 
+  const [dyData, setDyData] = useState<Record<string, unknown> | null>(null);
+
+  useEffect(() => {
+    chrome.storage.local.get('dyData', result => {
+      if (result.dyData) setDyData(result.dyData);
+    });
+
+    const handleMessage = (message: { type: string }) => {
+      if (message.type === 'BROOKLINEN_DY') {
+        setDyData(message);
+      }
+    };
+    chrome.runtime.onMessage.addListener(handleMessage);
+    return () => chrome.runtime.onMessage.removeListener(handleMessage);
+  }, []);
+
   const [buttonText, setButtonText] = useState('Copy Preview Theme URL');
 
   function copyToClipboard(text) {
@@ -87,19 +103,20 @@ export default function App() {
     window.open(link, '_blank');
   }
 
-  function Button({ text, callback, url }) {
+  function Button({ text, callback, url, style }) {
+    const styling = style == 'bold' ? 'font-bold' : 'text-[10px] text-white underline underline-offset-4 mr-4';
     if (!url && !callback) {
       return null;
     } else if (!url && callback) {
       return (
-        <button className="text-[10px] text-white underline underline-offset-4 mr-4" onClick={callback}>
+        <button className={styling} onClick={callback}>
           {text}
         </button>
       );
     } else {
       return (
         <button
-          className="text-[10px] text-white underline underline-offset-4 mr-4"
+          className={styling}
           onClick={() => {
             openTab(url);
           }}>
@@ -132,7 +149,7 @@ export default function App() {
       style={{ zIndex: 2147483648, display: checkCookie('_bl_chrome-extension_preview-bar') ? '' : 'none' }}>
       <div className="text-[12px] text-white relative">
         Viewing {!themeJSON.theme.isDraft ? 'live' : ''} theme
-        <span className="font-bold">{themeJSON?.theme?.name ? ':' + themeJSON?.theme.name : ''}</span>
+        <span className="font-bold">{themeJSON?.theme?.name ? ': ' + themeJSON?.theme.name : ''}</span>
         <svg
           className="absolute cursor-pointer"
           onClick={() => hidePreviewBar()}
@@ -152,15 +169,30 @@ export default function App() {
           />
         </svg>
       </div>
+      <div className="text-[12px] text-white relative mt-1 mb-1">
+        {' '}
+        Viewing promo object:{' '}
+        <Button
+          text={dyData?.payload?.version}
+          style={'bold'}
+          url={'https://adm.dynamicyield.com/r?locale=en&redirectToSectionId=8768435#/r/smarts/edit/1054597'}
+        />
+      </div>
       <div className="flex">
         <Button
           text={buttonText}
+          style={'link'}
           callback={() => {
             copyToClipboard(url.href);
           }}
         />
-        <Button text={`Open in ${adminScope?.replace(/^./, adminScope[0].toUpperCase())} Admin`} url={adminURL || ''} />
         <Button
+          style={'link'}
+          text={`Open in ${adminScope?.replace(/^./, adminScope[0].toUpperCase())} Admin`}
+          url={adminURL || ''}
+        />
+        <Button
+          style={'link'}
           text={'Open in ACF'}
           url={
             adminID
@@ -169,6 +201,7 @@ export default function App() {
           }
         />
         <Button
+          style={'link'}
           text={themeJSON?.theme?.name ? 'Exit Preview' : 'View Dev Themes'}
           callback={() => {
             exitPreview();
