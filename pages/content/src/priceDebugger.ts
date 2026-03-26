@@ -65,6 +65,7 @@ export function initPriceDebugger(getPromo: () => unknown): HTMLElement {
     const shopifyUrl = `https://admin.shopify.com/store/brooklinen2/products/${productId}`;
     const acfUrl = `https://admin.shopify.com/store/brooklinen2/apps/accentuate/app/edit?scope=product&id=${productId}`;
     pricePopup.innerHTML = `
+  <div style="position:absolute;right:8px;display:flex;justify-content:flex-end;"><span id="price-debugger-close" style="cursor:pointer;font-size:14px;line-height:1;padding:0 2px;">✕</span></div>
   <div class="p6">
   <div>
   <span class="t5">Base Prices</span> <hr/>
@@ -102,6 +103,10 @@ export function initPriceDebugger(getPromo: () => unknown): HTMLElement {
   </div>
   </div>
   `;
+    pricePopup.querySelector('#price-debugger-close')?.addEventListener('click', () => {
+      pricePopup.style.display = 'none';
+    });
+
     const rect = el.getBoundingClientRect();
     pricePopup.style.display = 'block';
     const popupHeight = pricePopup.offsetHeight;
