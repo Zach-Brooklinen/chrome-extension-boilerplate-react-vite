@@ -45,6 +45,7 @@ const Popup = () => {
       .then(res => {
         document.querySelector('[name="overlayGrid"]').checked = res.overlayGrid;
         document.querySelector('[name="previewBar"]').checked = res.previewBar;
+        document.querySelector('[name="priceDebugger"]').checked = res.priceDebugger;
       });
   };
 
@@ -82,6 +83,12 @@ const Popup = () => {
         <span className="ms-3 text-[12px] text-[#283455] dark:text-gray-300">
           Show Preview Bar {sessionStorage.getItem('previewBar')}
         </span>
+      </label>
+
+      <label className="inline-flex items-center cursor-pointer mb-[10px]">
+        <input type="checkbox" name="priceDebugger" onClick={e => toggleValue(e)} className="sr-only peer" />
+        <div className="scale-75 relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#283455] dark:peer-checked:bg-blue-600"></div>{' '}
+        <span className="ms-3 text-[12px] text-[#283455] dark:text-gray-300">Price Debugger</span>
       </label>
 
       <h2 className="text-[12px] font-bold mb-[5px]">Cookies</h2>

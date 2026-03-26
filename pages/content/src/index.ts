@@ -1,3 +1,5 @@
+import { initPriceDebugger, setPriceDebuggerEnabled } from './priceDebugger';
+
 function checkCookie(cookieName) {
   return document.cookie.indexOf(cookieName + '=') > -1;
 }
@@ -80,11 +82,16 @@ window.postMessage(
   '*',
 );
 
+let promo: unknown;
+const pricePopup = initPriceDebugger(() => promo);
+
 window.addEventListener('message', event => {
   if (event.source !== window || !event.data.type) return;
   if (event.data.type === 'BROOKLINEN_DY') {
-    const audienceJSON = JSON.parse(document?.querySelector('#dy-audiences')?.textContent);
-    event.data.audiences = audienceJSON?.audiences?.map(id => audienceLibrary[id]) ?? [];
+    const audienceJSON = JSON.parse(document?.querySelector('#dy-audiences')?.textContent ?? 'null');
+    event.data.audiences =
+      audienceJSON?.audiences?.map((id: string) => audienceLibrary[id as keyof typeof audienceLibrary]) ?? [];
+    promo = event.data.payload;
     chrome.storage.local.set({ dyData: event.data });
     chrome.runtime.sendMessage(event.data);
   }
@@ -98,29 +105,40 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
   document.cookie = `_bl_chrome_extension_id=${sender.id}; expires=${expires}; path=/;`;
   if (request.context) {
     switch (request.context) {
-      case 'overlayGrid':
-        const overlayGrid = document.querySelector('.overlay-grid');
+      case 'overlayGrid': {
+        const overlayGrid = document.querySelector('.overlay-grid') as HTMLElement | null;
         if (request.checked) {
           document.cookie = `_bl_chrome-extension_grid=true; expires=${expires}; path=/;`;
-          overlayGrid.style.display = 'grid';
+          if (overlayGrid) overlayGrid.style.display = 'grid';
         } else {
           document.cookie = `_bl_chrome-extension_grid=true; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-          overlayGrid.style.display = 'none';
+          if (overlayGrid) overlayGrid.style.display = 'none';
         }
-
         break;
-      case 'previewBar':
+      }
+      case 'priceDebugger': {
+        if (request.checked) {
+          document.cookie = `_bl_chrome-extension_price-debugger=true; expires=${expires}; path=/;`;
+          setPriceDebuggerEnabled(true, pricePopup);
+        } else {
+          document.cookie = `_bl_chrome-extension_price-debugger=true; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+          setPriceDebuggerEnabled(false, pricePopup);
+        }
+        break;
+      }
+      case 'previewBar': {
         const previewBar = document
           .querySelector('#chrome-extension-boilerplate-react-vite-content-view-root')
-          .shadowRoot.querySelector('#themePreviewBar');
+          ?.shadowRoot?.querySelector('#themePreviewBar') as HTMLElement | null;
         if (request.checked) {
           document.cookie = `_bl_chrome-extension_preview-bar=true; expires=${expires}; path=/;`;
-          previewBar.style.display = 'initial';
+          if (previewBar) previewBar.style.display = 'initial';
         } else {
           document.cookie = `_bl_chrome-extension_preview-bar=true; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
-          previewBar.style.display = 'none';
+          if (previewBar) previewBar.style.display = 'none';
         }
         break;
+      }
       default:
         break;
     }
@@ -129,13 +147,13 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
     //refresh page after cookie is set
     location.reload();
   } else if (request.loading) {
-    const previewJSON = JSON.parse(document.querySelector('#OnlineStorePreviewBarNextData').textContent);
     const promoJSON = JSON.parse(
-      `{${getStringBetween(document.querySelector('#defaultData').textContent, 'window.Brooklinen.promo = {', '};')}}`,
+      `{${getStringBetween(document.querySelector('#defaultData')?.textContent ?? '', 'window.Brooklinen.promo = {', '};')}}`,
     );
     sendResponse({
       overlayGrid: checkCookie('_bl_chrome-extension_grid'),
       previewBar: checkCookie('_bl_chrome-extension_preview-bar'),
+      priceDebugger: checkCookie('_bl_chrome-extension_price-debugger'),
       promoObject: promoJSON,
     });
   } else if (request.clearCookies) {
