@@ -1,9 +1,10 @@
 import '@src/Popup.css';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { withErrorBoundary, withSuspense, useDyData } from '@extension/shared';
 
 const Popup = () => {
   const dyData = useDyData();
+  const [audiences, setAudiences] = useState<string[]>([]);
 
   const openPage = page =>
     chrome.tabs.create({
@@ -16,6 +17,11 @@ const Popup = () => {
     const [tab] = await chrome.tabs.query({ currentWindow: true, active: true });
     if (e.target.checked) e.target.checked = false;
     else e.target.checked = true;
+    //price debugger and product tags can't both be on, so turning one on turns the other off
+    const exclusiveToggles = { priceDebugger: 'productTags', productTags: 'priceDebugger' };
+    if (e.target.checked && exclusiveToggles[e.target.name]) {
+      document.querySelector(`[name="${exclusiveToggles[e.target.name]}"]`).checked = false;
+    }
     await chrome.tabs.sendMessage(tab.id, {
       context: e.target.name,
       checked: e.target.checked,
@@ -46,6 +52,8 @@ const Popup = () => {
         document.querySelector('[name="overlayGrid"]').checked = res.overlayGrid;
         document.querySelector('[name="previewBar"]').checked = res.previewBar;
         document.querySelector('[name="priceDebugger"]').checked = res.priceDebugger;
+        document.querySelector('[name="productTags"]').checked = res.productTags;
+        setAudiences(res.audiences ?? []);
       });
   };
 
@@ -89,6 +97,12 @@ const Popup = () => {
         <input type="checkbox" name="priceDebugger" onClick={e => toggleValue(e)} className="sr-only peer" />
         <div className="scale-75 relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#283455] dark:peer-checked:bg-blue-600"></div>{' '}
         <span className="ms-3 text-[12px] text-[#283455] dark:text-gray-300">Price Debugger</span>
+      </label>
+
+      <label className="inline-flex items-center cursor-pointer mb-[10px]">
+        <input type="checkbox" name="productTags" onClick={e => toggleValue(e)} className="sr-only peer" />
+        <div className="scale-75 relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-[#283455] dark:peer-checked:bg-blue-600"></div>{' '}
+        <span className="ms-3 text-[12px] text-[#283455] dark:text-gray-300">Show Product Tags</span>
       </label>
 
       <h2 className="text-[12px] font-bold mb-[5px]">Cookies</h2>
@@ -209,7 +223,17 @@ const Popup = () => {
           </svg>
         </h2>
 
-        <ul className="audiences mb-[5px]">{dyData?.audiences?.map((audience, i) => <li key={i}>{audience}</li>)}</ul>
+        <ul className="audiences mb-[5px]">
+          {audiences.length ? (
+            audiences.map((audience, i) => <li key={i}>{audience}</li>)
+          ) : (
+            //an empty audience list usually means cookies were rejected, which blocks DY from loading audiences
+            <li className="italic">
+              No audience data. Cookies may have been rejected on this site. Accept cookies and refresh the page to see
+              audiences.
+            </li>
+          )}
+        </ul>
       </div>
       <div className="text-[10px] absolute bottom-[-20px] flex">
         <button

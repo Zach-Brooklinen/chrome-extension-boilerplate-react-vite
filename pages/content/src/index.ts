@@ -1,4 +1,5 @@
 import { initPriceDebugger, setPriceDebuggerEnabled } from './priceDebugger';
+import { initProductTags, setProductTagsEnabled } from './productTags';
 
 function checkCookie(cookieName) {
   return document.cookie.indexOf(cookieName + '=') > -1;
@@ -73,6 +74,12 @@ const audienceLibrary = {
   '360431': 'Referral Traffic',
 };
 
+//#dy-audiences is added by the theme after DY loads, which can be after BROOKLINEN_DY fires, so read it on demand
+function getAudiences(): string[] {
+  const audienceJSON = JSON.parse(document?.querySelector('#dy-audiences')?.textContent ?? 'null');
+  return audienceJSON?.audiences?.map((id: string) => audienceLibrary[id as keyof typeof audienceLibrary] ?? id) ?? [];
+}
+
 //Fire message to browser window indicating extension is ready
 
 window.postMessage(
@@ -84,13 +91,16 @@ window.postMessage(
 
 let promo: unknown;
 const pricePopup = initPriceDebugger(() => promo);
+const tagsPopup = initProductTags();
+
+//restore hover toggles from cookies so they persist across page navigations
+if (checkCookie('_bl_chrome-extension_price-debugger')) setPriceDebuggerEnabled(true, pricePopup);
+else if (checkCookie('_bl_chrome-extension_product-tags')) setProductTagsEnabled(true, tagsPopup);
 
 window.addEventListener('message', event => {
   if (event.source !== window || !event.data.type) return;
   if (event.data.type === 'BROOKLINEN_DY') {
-    const audienceJSON = JSON.parse(document?.querySelector('#dy-audiences')?.textContent ?? 'null');
-    event.data.audiences =
-      audienceJSON?.audiences?.map((id: string) => audienceLibrary[id as keyof typeof audienceLibrary]) ?? [];
+    event.data.audiences = getAudiences();
     promo = event.data.payload;
     chrome.storage.local.set({ dyData: event.data });
     chrome.runtime.sendMessage(event.data);
@@ -120,9 +130,24 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
         if (request.checked) {
           document.cookie = `_bl_chrome-extension_price-debugger=true; expires=${expires}; path=/;`;
           setPriceDebuggerEnabled(true, pricePopup);
+          //price debugger and product tags share the same hover target, so only one can be on at a time
+          document.cookie = `_bl_chrome-extension_product-tags=true; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+          setProductTagsEnabled(false, tagsPopup);
         } else {
           document.cookie = `_bl_chrome-extension_price-debugger=true; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
           setPriceDebuggerEnabled(false, pricePopup);
+        }
+        break;
+      }
+      case 'productTags': {
+        if (request.checked) {
+          document.cookie = `_bl_chrome-extension_product-tags=true; expires=${expires}; path=/;`;
+          setProductTagsEnabled(true, tagsPopup);
+          document.cookie = `_bl_chrome-extension_price-debugger=true; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+          setPriceDebuggerEnabled(false, pricePopup);
+        } else {
+          document.cookie = `_bl_chrome-extension_product-tags=true; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+          setProductTagsEnabled(false, tagsPopup);
         }
         break;
       }
@@ -154,6 +179,8 @@ chrome.runtime.onMessage.addListener(function (request, sender, sendResponse) {
       overlayGrid: checkCookie('_bl_chrome-extension_grid'),
       previewBar: checkCookie('_bl_chrome-extension_preview-bar'),
       priceDebugger: checkCookie('_bl_chrome-extension_price-debugger'),
+      productTags: checkCookie('_bl_chrome-extension_product-tags'),
+      audiences: getAudiences(),
       promoObject: promoJSON,
     });
   } else if (request.clearCookies) {
